@@ -1,0 +1,16 @@
+{
+  "name": "project1",
+  "version": "1.0.0",
+  "scripts": {
+    "do-compile": "heft do-compile",
+    "do-jest": "heft do-jest",
+    "do-docs": "heft do-docs",
+    "do-tab": "heft do-tab"
+  },
+  "dependencies": {
+    "heft": "1.0.0"
+  },
+  "devDependencies": {
+    "heft": "1.0.0"
+  }
+}

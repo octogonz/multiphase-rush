@@ -1,0 +1,113 @@
+/*
+
+rush full-build --production
+  - npm run do-compile --production
+  - npm run do-jest
+  - npm run do-docs
+  - npm run do-tab
+
+rush gen-docs
+  - npm run do-docs
+
+CLEANING:
+
+rush clean full-build
+  - cleans do-compile, do-jest, do-docs, do-tab
+
+rush clean do-jest
+  - cleans do-compile, do-jest, do-docs, do-tab
+
+rush --clean full-build --production
+  - "rush clean full-build && rush full-build --production"?
+
+*/
+{
+  /**
+   * Custom "commands" introduce new verbs for the command-line.  To see the help for these
+   * example commands, try "rush --help", "rush my-bulk-command --help", or
+   * "rush my-global-command --help".
+   */
+  "commands": [
+    {
+      "commandKind": "multiphase",
+      "name": "full-build",
+      "phases": [ "do-compile", "do-jest", "do-docs", "do-tab" ]
+    },
+    {
+      "commandKind": "multiphase",
+      "name": "gen-docs",
+      "phases": [ "do-docs" ]
+    },
+    {
+      "commandKind": "multiphase",
+      "name": "test",
+      "phases": [ "do-jest" ]
+    }
+  ],
+
+  // Phases only apply to "multiphase" commands
+  "phases": [
+    {
+      "phaseName": "do-compile",
+      "dependencies": {
+        "ownProjectPhases": [ ],
+        // Before compiling a project, all upstream projects must complete their compile
+        "upstreamProjectPhases": [
+          "do-compile"
+        ]
+      }
+    },
+    {
+      "phaseName": "do-jest",
+      "dependencies": {
+        // Before testing a project, its own build phase must finish building.
+        // (But it's okay if they are still running tests.)
+        "ownProjectPhases": [
+          "do-compile"
+        ],
+        "upstreamProjectPhases": [ ]
+      }
+    },
+    {
+      "phaseName": "do-docs",
+      "dependencies": {
+        // Before generating docs for a project, its own build phase must finish building
+        "ownProjectPhases": [
+          "do-compile"
+        ],
+        // Docs depend on the generated docs from upstream projects
+        "upstreamProjectPhases": [
+          "do-docs"
+        ]
+      }
+    },
+    {
+      "phaseName": "do-tab",
+      "dependencies": {
+        // Wait for upstream tab projects to finish queueing before starting this phase
+        "upstreamProjectPhases": [
+          "do-tab"
+        ],
+        // Before queueing tab, everything else must complete
+        "ownProjectPhases": [
+          "do-jest", "do-docs"
+        ]
+      }
+    }
+  ],
+
+  /**
+   * Custom "parameters" introduce new parameters for specified Rush command-line commands.
+   * For example, you might define a "--production" parameter for the "rush build" command.
+   */
+  "parameters": [
+    {
+      "parameterKind": "flag",
+      "longName": "--production",
+
+      "associatedCommands": [ "build", "rebuild" ],
+
+      "associatedPhases": [ "do-compile", "do-docs" ]
+    }
+  ]
+}

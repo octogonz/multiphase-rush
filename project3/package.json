@@ -1,0 +1,13 @@
+{
+  "name": "project3",
+  "version": "1.0.0",
+  "scripts": {
+    "do-compile": "tsc"
+  },
+  "dependencies": {
+    "project3": "1.0.0"
+  },
+  "devDependencies": {
+    "heft": "1.0.0"
+  }
+}
