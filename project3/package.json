@@ -5,6 +5,7 @@
     "build": "heft build",
     "test": "heft test",
     "docs": "doc-tool",
+    "my-bulk-command": "./scripts/my-command.js",
 
     "clean": "heft clean",
 

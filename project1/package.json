@@ -7,6 +7,7 @@
     "build": "heft build",  // tasks (baked-in to Heft): compiling and linting
     "test": "heft test",    // tasks (baked-in to Heft): compiling and linting and testing
     "docs": "doc-tool",     // tasks: docs
+    "my-bulk-command": "./scripts/my-command.js",
 
     "clean": "heft clean",
 
