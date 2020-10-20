@@ -1,113 +1,114 @@
 /*
+rush build --production
+rush test --production
 
-rush full-build --production
-  - npm run do-compile --production
-  - npm run do-jest
-  - npm run do-docs
-  - npm run do-tab
+// Skips incremental build
+rush --full build --production
 
-rush gen-docs
-  - npm run do-docs
-
-CLEANING:
-
-rush clean full-build
-  - cleans do-compile, do-jest, do-docs, do-tab
-
-rush clean do-jest
-  - cleans do-compile, do-jest, do-docs, do-tab
-
-rush --clean full-build --production
-  - "rush clean full-build && rush full-build --production"?
-
+// Deletes all build outputs
+rush clean
 */
+
 {
-  /**
-   * Custom "commands" introduce new verbs for the command-line.  To see the help for these
-   * example commands, try "rush --help", "rush my-bulk-command --help", or
-   * "rush my-global-command --help".
-   */
   "commands": [
     {
-      "commandKind": "multiphase",
-      "name": "full-build",
-      "phases": [ "do-compile", "do-jest", "do-docs", "do-tab" ]
+      "commandKind": "bulk", // Bulk commands can eventually be deprecated for multiphase commands with a single upstream phase dependency
+      "name": "my-bulk-command",
+      "summary": "Example bulk custom command",
+      "description": "This is an example custom command that runs separately for each project",
+
+      "safeForSimultaneousRushProcesses": false,
+      "enableParallelism": false,
+      "ignoreDependencyOrder": false,
+      "ignoreMissingScript": false,
+      "allowWarningsInSuccessfulBuild": false
     },
+
     {
-      "commandKind": "multiphase",
-      "name": "gen-docs",
-      "phases": [ "do-docs" ]
+      "commandKind": "phased",
+      "name": "build",
+      "safeForSimultaneousRushProcesses": false,
+
+      // Order not important, as this will be determined by the phase configuration.
+      // All required phases should be specified for clarity, throw error if not true
+      "phases": [ "_phase:compile", "_phase:docs" ]
+
+      /*
+      "parameters": {
+        "--no-docs": {
+          "phases": [ "_phase:compile" ]
+        }
+      }
+      */
+
+      // Other properties have been moved into the individual phases
     },
+
+
     {
-      "commandKind": "multiphase",
+      "commandKind": "phased",
       "name": "test",
-      "phases": [ "do-jest" ]
+      "safeForSimultaneousRushProcesses": false,
+
+      // Order not important, as this will be determined by the phase configuration.
+      // All required phases should be specified for clarity, throw error if not true
+      "phases": [ "_phase:compile", "_phase:test", "_phase:docs" ]
+
+      // Other properties have been moved into the individual phases
     }
   ],
 
-  // Phases only apply to "multiphase" commands
   "phases": [
-    {
-      "phaseName": "do-compile",
-      "dependencies": {
-        "ownProjectPhases": [ ],
-        // Before compiling a project, all upstream projects must complete their compile
-        "upstreamProjectPhases": [
-          "do-compile"
-        ]
-      }
-    },
-    {
-      "phaseName": "do-jest",
-      "dependencies": {
-        // Before testing a project, its own build phase must finish building.
-        // (But it's okay if they are still running tests.)
-        "ownProjectPhases": [
-          "do-compile"
-        ],
-        "upstreamProjectPhases": [ ]
-      }
-    },
-    {
-      "phaseName": "do-docs",
-      "dependencies": {
-        // Before generating docs for a project, its own build phase must finish building
-        "ownProjectPhases": [
-          "do-compile"
-        ],
-        // Docs depend on the generated docs from upstream projects
-        "upstreamProjectPhases": [
-          "do-docs"
-        ]
-      }
-    },
-    {
-      "phaseName": "do-tab",
-      "dependencies": {
-        // Wait for upstream tab projects to finish queueing before starting this phase
-        "upstreamProjectPhases": [
-          "do-tab"
-        ],
-        // Before queueing tab, everything else must complete
-        "ownProjectPhases": [
-          "do-jest", "do-docs"
-        ]
-      }
-    }
-  ],
 
-  /**
-   * Custom "parameters" introduce new parameters for specified Rush command-line commands.
-   * For example, you might define a "--production" parameter for the "rush build" command.
-   */
+    {
+      "name": "_phase:compile",
+      "summary": "Build phase",
+      "description": "",
+      "dependencies": {
+        // We can start build of this project after build of upstream project completes (no need for tests)
+        "upstream": [ "_phase:compile" ]
+      },
+      "ignoreMissingScript": true,
+      "allowWarningsOnSuccess": false,
+      "enableParallelism": true
+    },
+
+    {
+      "name": "_phase:test",
+      "summary": "Test phase",
+      "description": "",
+      "dependencies": {
+        "self": [ "_phase:compile" ]
+      },
+      "ignoreMissingScript": true,
+      "allowWarningsOnSuccess": false,
+      "enableParallelism": true
+    },
+
+    {
+      "name": "_phase:docs",
+      "summary": "Docs phase",
+      "description": "",
+      "dependencies": {
+        "self": [ "_phase:compile" ],
+        // Need upstream docs to generate project docs
+        "upstream": [ "_phase:docs" ]
+      },
+      "ignoreMissingScript": true,
+      "allowWarningsOnSuccess": false,
+      "enableParallelism": true
+    }
+
+  ],
   "parameters": [
     {
       "parameterKind": "flag",
       "longName": "--production",
-
-      "associatedCommands": [ "build", "rebuild" ],
-
-      "associatedPhases": [ "do-compile", "do-docs" ]
+      "shortName": "-p",
+      "description": "A custom flag parameter that is passed to the scripts that are invoked when building projects",
+      "associatedCommands": [ "build" ],
+       // Only the phases in the command that this parameter applies to
+      "associatedPhases": [ "_phase:compile", "_phase:docs" ]
     }
   ]
 }

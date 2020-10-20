@@ -2,10 +2,17 @@
   "name": "project1",
   "version": "1.0.0",
   "scripts": {
-    "do-compile": "heft do-compile",
-    "do-jest": "heft do-jest",
-    "do-docs": "heft do-docs",
-    "do-tab": "heft do-tab"
+    // "rushx build" = "npm run build"
+    "build": "heft build",
+    "test": "heft test",
+    "docs": "doc-tool",
+
+    "clean": "heft clean",
+
+    // "rush build"
+    "_phase:compile": "heft build",
+    "_phase:test": "heft test --no-build",
+    "_phase:docs": "doc-tool"
   },
   "dependencies": {
     "heft": "1.0.0"

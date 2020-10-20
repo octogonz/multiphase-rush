@@ -2,7 +2,15 @@
   "name": "project3",
   "version": "1.0.0",
   "scripts": {
-    "do-compile": "tsc"
+    "build": "heft build",
+    "test": "heft test",
+    "docs": "doc-tool",
+
+    "clean": "heft clean",
+
+    "_phase:compile": "heft build",
+    "_phase:test": "heft test --no-build",
+    "_phase:docs": "doc-tool"
   },
   "dependencies": {
     "project3": "1.0.0"

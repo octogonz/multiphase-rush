@@ -2,10 +2,15 @@
   "name": "project2",
   "version": "1.0.0",
   "scripts": {
-    "do-compile": "heft do-compile",
-    "do-jest": "heft do-jest",
-    "do-docs": "heft do-docs",
-    "do-tab": "heft do-tab"
+    "build": "heft build",
+    "test": "heft test",
+    "docs": "doc-tool",
+
+    "clean": "heft clean",
+
+    "_phase:compile": "heft build",
+    "_phase:test": "heft test --no-build",
+    "_phase:docs": "doc-tool"
   },
   "dependencies": {
     "project1": "1.0.0"
