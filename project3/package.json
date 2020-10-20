@@ -8,12 +8,13 @@
 
     "clean": "heft clean",
 
-    "_phase:compile": "heft build",
+    "_phase:compile": "heft build --lite",
+    "_phase:lint": "heft lint",
     "_phase:test": "heft test --no-build",
     "_phase:docs": "doc-tool"
   },
   "dependencies": {
-    "project3": "1.0.0"
+    "project1": "1.0.0"
   },
   "devDependencies": {
     "heft": "1.0.0"

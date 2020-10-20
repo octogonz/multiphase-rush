@@ -8,7 +8,8 @@
 
     "clean": "heft clean",
 
-    "_phase:compile": "heft build",
+    "_phase:compile": "heft build --lite",
+    "_phase:lint": "heft lint",
     "_phase:test": "heft test --no-build",
     "_phase:docs": "doc-tool"
   },

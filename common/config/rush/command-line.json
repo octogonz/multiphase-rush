@@ -1,18 +1,36 @@
-/*
-rush build --production
-rush test --production
-
-// Skips incremental build
-rush --full build --production
-
-// Deletes all build outputs
-rush clean
-*/
-
 {
   "commands": [
+    // The new "phased" kind defines the CLI user interface for invoking phases.
+    // Here we define the "rush build" command that will perform the "compile" and "docs" phases.
     {
-      "commandKind": "bulk", // Bulk commands can eventually be deprecated for multiphase commands with a single upstream phase dependency
+      "commandKind": "phased",
+      "name": "build",
+      "summary": "Compiles projects",
+      "description": "Invoke \"rush build\" to compile all projects without running unit tests",
+      "safeForSimultaneousRushProcesses": false,
+
+      // Order is not important, as this will be determined by the phase configuration.
+      // All required phases should be specified for clarity, throw error if not true.
+      // (These array elements refer to the "name" field from the "phases" section below.)
+      "phases": ["_phase:compile", "_phase:lint", "_phase:docs"]
+
+      // (Other properties have been moved into the individual phases)
+    },
+
+    {
+      "commandKind": "phased",
+      "name": "test",
+      "summary": "Compiles projects and runs unit tests for all projects",
+      "description": "Invoke \"rush test\" to run unit tests",
+      "safeForSimultaneousRushProcesses": false,
+
+      "phases": ["_phase:compile", "_phase:lint", "_phase:test", "_phase:docs"]
+    },
+
+    // Rush's existing "bulk" commands are functionally similar to a phased command with one phase.
+    // But bulk commands are easier to define for simple operations, so we will continue to support them.
+    {
+      "commandKind": "bulk",
       "name": "my-bulk-command",
       "summary": "Example bulk custom command",
       "description": "This is an example custom command that runs separately for each project",
@@ -22,51 +40,28 @@ rush clean
       "ignoreDependencyOrder": false,
       "ignoreMissingScript": false,
       "allowWarningsInSuccessfulBuild": false
-    },
-
-    {
-      "commandKind": "phased",
-      "name": "build",
-      "safeForSimultaneousRushProcesses": false,
-
-      // Order not important, as this will be determined by the phase configuration.
-      // All required phases should be specified for clarity, throw error if not true
-      "phases": [ "_phase:compile", "_phase:docs" ]
-
-      /*
-      "parameters": {
-        "--no-docs": {
-          "phases": [ "_phase:compile" ]
-        }
-      }
-      */
-
-      // Other properties have been moved into the individual phases
-    },
-
-
-    {
-      "commandKind": "phased",
-      "name": "test",
-      "safeForSimultaneousRushProcesses": false,
-
-      // Order not important, as this will be determined by the phase configuration.
-      // All required phases should be specified for clarity, throw error if not true
-      "phases": [ "_phase:compile", "_phase:test", "_phase:docs" ]
-
-      // Other properties have been moved into the individual phases
     }
   ],
 
+  // The "phases" are defined separately from "commands", because they are
+  // internal implementation, whereas commands are the CLI user interface.
   "phases": [
-
     {
       "name": "_phase:compile",
-      "summary": "Build phase",
-      "description": "",
       "dependencies": {
-        // We can start build of this project after build of upstream project completes (no need for tests)
-        "upstream": [ "_phase:compile" ]
+        // We can start compiling this project immediately after upstream dependencies have finished compiling
+        "upstream": ["_phase:compile"]
+      },
+      "ignoreMissingScript": true,
+      "allowWarningsOnSuccess": false,
+      "enableParallelism": true
+    },
+
+    {
+      "name": "_phase:lint",
+      "dependencies": {
+        // We can start ESLint for this project immediately after upstream dependencies have finished compiling
+        "self": ["_phase:compile"]
       },
       "ignoreMissingScript": true,
       "allowWarningsOnSuccess": false,
@@ -75,10 +70,9 @@ rush clean
 
     {
       "name": "_phase:test",
-      "summary": "Test phase",
-      "description": "",
       "dependencies": {
-        "self": [ "_phase:compile" ]
+        // We can invoke Jest immediately after this project finishes compiling its own files
+        "self": ["_phase:compile"]
       },
       "ignoreMissingScript": true,
       "allowWarningsOnSuccess": false,
@@ -87,28 +81,36 @@ rush clean
 
     {
       "name": "_phase:docs",
-      "summary": "Docs phase",
-      "description": "",
       "dependencies": {
-        "self": [ "_phase:compile" ],
-        // Need upstream docs to generate project docs
-        "upstream": [ "_phase:docs" ]
+        // Generating docs requires our own project to have completed compiling
+        "self": ["_phase:compile"],
+        // AND it requires upstream dependencies to have finished generating their docs (and thus compiling)
+        "upstream": ["_phase:docs"]
       },
       "ignoreMissingScript": true,
       "allowWarningsOnSuccess": false,
       "enableParallelism": true
     }
-
   ],
+
   "parameters": [
     {
       "parameterKind": "flag",
       "longName": "--production",
       "shortName": "-p",
       "description": "A custom flag parameter that is passed to the scripts that are invoked when building projects",
-      "associatedCommands": [ "build" ],
-       // Only the phases in the command that this parameter applies to
-      "associatedPhases": [ "_phase:compile", "_phase:docs" ]
+
+      // For non-phased commands, we will continue to use the "associatedCommands" setting to associate
+      // parameters with them.  (Phased commands must NOT appear in this list.)
+      "associatedCommands": ["my-bulk-command"],
+
+      // Phased commands expose parameters that are associated with their underlying phases.
+      // For example, "rush build" will accept the union of all parameters associated with any of
+      // its individual phases.
+      //
+      // The "--production" flag will be appended to package.json scripts for these specific phases,
+      // which are expected to support it.  The flag will be omitted for other phases.
+      "associatedPhases": ["_phase:compile", "_phase:docs"]
     }
   ]
 }

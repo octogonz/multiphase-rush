@@ -2,20 +2,21 @@
   "name": "project1",
   "version": "1.0.0",
   "scripts": {
-    // "rushx build" = "npm run build"
-    "build": "heft build",
-    "test": "heft test",
-    "docs": "doc-tool",
+    // These scripts will be invoked by "rushx" but not by "rush".
+    // For now these are traditional "npm run" scripts that perform multiple tasks, with support for watch mode.
+    "build": "heft build",  // tasks (baked-in to Heft): compiling and linting
+    "test": "heft test",    // tasks (baked-in to Heft): compiling and linting and testing
+    "docs": "doc-tool",     // tasks: docs
 
     "clean": "heft clean",
 
-    // "rush build"
-    "_phase:compile": "heft build",
-    "_phase:test": "heft test --no-build",
-    "_phase:docs": "doc-tool"
-  },
-  "dependencies": {
-    "heft": "1.0.0"
+    // These scripts will be invoked by "rush" but not by "rushx".
+    // The phase names must start with "_phase:".  The underscore indicates that users don't normally invoke them
+    // directly, and "rushx" could hide these names by default.
+    "_phase:compile": "heft build --lite", // tasks: compiling only
+    "_phase:lint": "heft lint",            // tasks: linting only
+    "_phase:test": "heft test --no-build", // tasks: testing only
+    "_phase:docs": "doc-tool"              // tasks: docs
   },
   "devDependencies": {
     "heft": "1.0.0"
